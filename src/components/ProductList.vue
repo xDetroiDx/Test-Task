@@ -2,7 +2,7 @@
   <div class="product-list">
     <h1>Список товаров</h1>
     <ul>
-      <li v-for="(product, index) in products" :key="product.id" class="product-item">
+      <li v-for="product in products" :key="product.id" class="product-item">
         <div class="flex-container">
           <div class="product-info">
             <h2 @click="selectProduct(product)" class="product-name">{{ product.name }}</h2>
@@ -10,8 +10,8 @@
             <p class="product-price">{{ product.price }}$</p>
             <button @click="addToFavorites(product)" class="favorite-button">Добавить в избранное</button>
           </div>
-          <div class="product-image" v-if="getImageUrl(index)">
-            <img :src="getImageUrl(index)" :alt="product.name" />
+          <div class="product-image" v-if="getImageUrl(product.id)">
+            <img :src="getImageUrl(product.id)" :alt="product.name" />
           </div>
         </div>
       </li>
@@ -24,6 +24,10 @@
       <p class="product-price">Цена: {{ selectedProduct.price }}$</p>
       <button @click="addToFavorites(selectedProduct)" class="favorite-button">Добавить в избранное</button>
     </div>
+
+    <div v-if="showNotification" class="notification">
+      Товар добавлен в избранное!
+    </div>
   </div>
 </template>
 
@@ -35,6 +39,7 @@ export default {
   setup() {
     const store = useProductStore();
     const selectedProduct = ref(null);
+    const showNotification = ref(false);
 
     const selectProduct = (product) => {
       selectedProduct.value = product;
@@ -42,30 +47,38 @@ export default {
 
     const addToFavorites = (product) => {
       store.addToFavorites(product);
+      showNotification.value = true;
+      setTimeout(() => {
+        showNotification.value = false;
+      }, 2000);
     };
 
     const closeDetails = () => {
-      selectedProduct.value = null; 
+      selectedProduct.value = null;
     };
 
-    const getImageUrl = (index) => {
+    const getImageUrl = (productId) => {
       try {
-        const imagePath = index === 0 
-          ? require('../assets/images/image.png') 
-          : require(`../assets/images/image${index}.jpg`);
-        return imagePath; 
-      } catch (error) {
-        return null; 
+        const imagePng = require(`../assets/images/image${productId}.png`);
+        return imagePng;
+      } catch (pngError) {
+        try {
+          const imageJpg = require(`../assets/images/image${productId}.jpg`);
+          return imageJpg;
+        } catch (jpgError) {
+          return null;
+        }
       }
     };
 
     return {
-      products: computed(() => store.products), 
+      products: computed(() => store.products),
       selectedProduct,
       selectProduct,
       addToFavorites,
       closeDetails,
       getImageUrl,
+      showNotification,
     };
   },
 };
@@ -74,8 +87,8 @@ export default {
 <style scoped>
 .flex-container {
   display: flex;
-  justify-content: space-between; 
-  align-items: center; 
+  justify-content: space-between;
+  align-items: center;
 }
 
 .product-info {
@@ -87,7 +100,7 @@ export default {
 }
 
 .product-image img {
-  max-width: 100px; 
+  max-width: 100px;
   height: auto;
 }
 
@@ -145,7 +158,6 @@ export default {
   background-color: #0056b3;
 }
 
-
 .product-details {
   position: fixed;
   bottom: 20px;
@@ -196,5 +208,27 @@ export default {
   font-size: 24px;
   cursor: pointer;
   color: #333;
+}
+
+/* Стили для информационного окна */
+.notification {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #28a745;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1100;
+  animation: fadeInOut 2s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
 }
 </style>
